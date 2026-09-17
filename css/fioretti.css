@@ -7,7 +7,7 @@ body { font-size:15px; }
 .brand { gap:12px; font-size:20px; letter-spacing:1px; line-height:1.1; }
 .brand img { width:60px; height:60px; object-fit:contain; border-radius:14px; background:white; flex-shrink:0; }
 .brand small { display:block; margin-top:6px; font-size:10px; letter-spacing:2px; font-weight:500; }
-.sidebar { width:258px; padding:28px 20px; background:linear-gradient(180deg,#121a37 0%,#0c1226 100%); border-right:0; position:relative; }
+.sidebar { width:258px; padding:28px 20px; background:linear-gradient(180deg,#121a37 0%,#0c1226 100%); border-right:0; }
 .sidebar:before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--red),#ff6a55 60%,transparent); }
 .nav-label { color:#6f7ea3; font-size:10px; letter-spacing:2px; margin-top:46px; font-weight:700; }
 nav { gap:6px; }
