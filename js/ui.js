@@ -7,6 +7,18 @@ const remote = config.provider === 'supabase';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = value => new Date(value).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const badge = status => `<span class="badge status-${statuses.indexOf(status)}">${esc(status)}</span>`;
+const svg = path => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+const icons = {
+  grid: svg('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  route: svg('<path d="M7 17 17 7M9 7h8v8"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>'),
+  check: svg('<path d="M5 13l4 4L19 7"/>'),
+  cancel: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
+};
+const statIcons = [icons.clock, icons.route, icons.check, icons.cancel];
+const toneColors = ['#e6a417','#2f8f6f','#3ea363','#e32230'];
+const toneStyle = status => `style="--tone:${toneColors[statuses.indexOf(status)]}"`;
 const logo = `<img src="${base}assets/fioretti-logo.jpeg" alt="" width="64" height="64"><span>FIORETTI<small>AUTO SOCORRO</small></span>`;
 function message(text, bad=false, target='#message') {
   const el=$(target); if (!el) return;
@@ -47,7 +59,7 @@ async function init() {
   const drivers=await services.drivers.list();
   const driverName=id=>drivers.find(d=>d.id===id)?.name || (id ? 'Motorista indisponível' : 'Não atribuído');
   const driverOptions=selected=>drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)}</option>`).join('');
-  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">▦ <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">＋ <span>Novo chamado</span></a>`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">↗ <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
+  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
   function leave() { $('#detail')?.close(); $('#main').replaceChildren(); location.replace(base+'login.html'); }
   $('#logout').onclick=async()=>{try { await services.auth.signOut(); leave(); } catch(e) { error(e); }};
   await services.auth.watch(leave);
@@ -107,11 +119,11 @@ async function init() {
       const [rows,summary]=await Promise.all([services.chamados.list(filters),page==='dashboard'?services.chamados.summary():null]);
       if (version!==revision) return;
       if (page==='dashboard') {
-        $('#stats').innerHTML=statuses.map((s,i)=>`<article class="stat"><div class="stat-label">${s}<span class="stat-icon tone-${i}">${['◷','↗','✓','×'][i]}</span></div><strong>${String(summary[s]||0).padStart(2,'0')}</strong><small>${['Prontos para despacho','Equipes em operação','Atendimentos finalizados','Atendimentos encerrados'][i]}</small></article>`).join('');
+        $('#stats').innerHTML=statuses.map((s,i)=>`<article class="stat" data-tone="${i}"><div class="stat-label">${s}<span class="stat-icon tone-${i}">${statIcons[i]}</span></div><strong>${String(summary[s]||0).padStart(2,'0')}</strong><small>${['Prontos para despacho','Equipes em operação','Atendimentos finalizados','Atendimentos encerrados'][i]}</small></article>`).join('');
         $('#count').textContent=`${rows.length} nesta página`;
         $('#rows').innerHTML=rows.map(r=>`<tr><td><button class="table-link" data-detail="${esc(r.id)}">${esc(r.protocolo)}</button><small>${date(r.createdAt)}</small></td><td><b>${esc(r.cliente)}</b><small>${esc(r.servico)}</small></td><td>${esc(r.placa)}<small>${esc(r.veiculo)}</small></td><td>${esc(driverName(r.motorista))}</td><td>${badge(r.status)}</td><td><span class="${r.prioridade==='Urgente'?'urgent':'muted'}">${esc(r.prioridade)}</span></td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhum chamado nesta página. Ajuste os filtros ou volte à página anterior.</td></tr>';
       } else {
-        $('#driver-calls').innerHTML=rows.map(r=>`<article class="panel driver-card"><div class="card-top"><b>${esc(r.protocolo)}</b>${badge(r.status)}</div><h2>${esc(r.veiculo)}</h2><p>${esc(r.placa)} · ${esc(r.cliente)}</p><p><b>Origem</b><br>${esc(r.origem)}</p><p><b>Destino</b><br>${esc(r.destino)}</p><button class="button secondary" data-detail="${esc(r.id)}">Ver atendimento</button></article>`).join('')||'<div class="panel empty">Nenhum chamado nesta página para este motorista.</div>';
+        $('#driver-calls').innerHTML=rows.map(r=>`<article class="panel driver-card" ${toneStyle(r.status)}><div class="card-top"><b>${esc(r.protocolo)}</b>${badge(r.status)}</div><h2>${esc(r.veiculo)}</h2><p>${esc(r.placa)} · ${esc(r.cliente)}</p><p><b>Origem</b><br>${esc(r.origem)}</p><p><b>Destino</b><br>${esc(r.destino)}</p><button class="button secondary" data-detail="${esc(r.id)}">Ver atendimento</button></article>`).join('')||'<div class="panel empty">Nenhum chamado nesta página para este motorista.</div>';
       }
       $('#prev').disabled=offset===0; $('#next').disabled=rows.length<50;
       $('#page-count').textContent=`Página ${offset/50+1}`;
