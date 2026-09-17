@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  :root{--navy:#10172f;--blue:#252a96;--ink:#18223b;--muted:#687287;--line:#e3e7ef;--bg:#f4f6fa;--red:#e32230;}
+  *{box-sizing:border-box;}
+  body{margin:0;font:15px/1.55 'Segoe UI',Arial,sans-serif;color:var(--ink);background:#fff;}
+  a{color:inherit;text-decoration:none;}
+  a:hover{color:var(--blue);}
+  em{color:var(--red);font-style:normal;}
+  .button{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;padding:11px 18px;font-size:14px;font-weight:600;border-radius:8px;background:var(--blue);color:#fff;border:1px solid var(--blue);box-shadow:0 3px 9px rgba(37,42,150,.08);}
+  select,input{width:100%;min-height:44px;font-size:16px;border:1px solid #cfd5e3;border-radius:6px;padding:11px 12px;background:#fff;color:var(--ink);}
+</style>
+</helmet>
+<div style="display:grid;grid-template-columns:1fr 1fr;min-height:900px;background:#fff;">
+
+  <section style="background:#10172f;color:#fff;padding:36px 50px 28px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:12px;font-size:20px;letter-spacing:1px;line-height:1.1;">
+      <img src="fioretti-logo.jpeg" width="60" height="60" style="width:60px;height:60px;object-fit:contain;border-radius:12px;background:#fff;flex-shrink:0;">
+      <span>FIORETTI<small style="display:block;margin-top:6px;font-size:10px;letter-spacing:2px;font-weight:500;">AUTO SOCORRO</small></span>
+    </div>
+
+    <div style="margin:36px 0 28px;">
+      <div style="font-size:11px;letter-spacing:1.7px;color:#b6c4f6;font-weight:700;">DA CENTRAL À ESTRADA</div>
+      <h1 style="font-size:clamp(36px,4vw,54px);line-height:1.07;letter-spacing:-1.5px;max-width:440px;margin:5px 0 10px;font-weight:720;">O cuidado começa<br>no primeiro<br><em>chamado.</em></h1>
+      <p style="color:#b9c3dc;margin:22px 0 0;font-size:15px;">Auto Socorro Fioretti<br>Imperatriz e região.</p>
+    </div>
+
+    <div style="height:200px;margin:0 -50px 24px;">
+      <img src="fioretti-guincho.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;">
+    </div>
+
+    <span style="font-size:10px;letter-spacing:2px;color:#9aa8c8;">AGILIDADE · RESPEITO · CUIDADO</span>
+  </section>
+
+  <section style="width:min(460px,100%);padding:40px 30px;margin:auto;">
+    <div style="font-size:11px;letter-spacing:1.7px;color:var(--blue);font-weight:700;">ÁREA DA EQUIPE</div>
+    <h1 style="font-size:32px;margin:12px 0 0;letter-spacing:-1px;font-weight:720;">Acesse a operação</h1>
+    <p style="color:var(--muted);margin:8px 0 16px;">Escolha um perfil para conhecer o sistema.</p>
+
+    <form style="display:grid;gap:22px;margin:28px 0;">
+      <div style="display:grid;gap:7px;">
+        <label style="font-size:14px;font-weight:600;">Perfil de acesso</label>
+        <select><option>Central de atendimento</option><option>Motorista</option></select>
+      </div>
+      <button type="button" class="button">Entrar na demonstração</button>
+    </form>
+
+    <div style="padding:13px 16px;border-radius:6px;background:#edf0ff;color:#283578;font-size:13px;margin-bottom:20px;">Demonstração local · Use somente dados fictícios.</div>
+    <a href="#" style="font-size:14px;color:var(--muted);">← Voltar ao início</a>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
