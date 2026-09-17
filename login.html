@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172f">
+  <meta name="description" content="Auto Socorro Fioretti — central de atendimentos e área do motorista.">
+  <title>Acessar operação | Fioretti</title>
+  <link rel="icon" href="assets/fioretti-logo.jpeg" type="image/jpeg">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/fioretti.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body data-page="login">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <main id="main" class="login-layout">
+  <section class="login-art"><a class="brand" href="index.html" aria-label="Fioretti — início"><img src="assets/fioretti-logo.jpeg" alt="" width="64" height="64"><span>FIORETTI<small>AUTO SOCORRO</small></span></a><div class="login-story"><div class="eyebrow">DA CENTRAL À ESTRADA</div><h1>O cuidado começa<br>no primeiro<br><em>chamado.</em></h1><p>Auto Socorro Fioretti<br>Imperatriz e região.</p></div><div class="login-photo"><img src="assets/fioretti-guincho.jpeg" alt="Guincho Fioretti em atendimento" width="1024" height="1280"></div><span class="login-foot">AGILIDADE · RESPEITO · CUIDADO</span></section>
+  <section class="login-box"><div class="eyebrow">ÁREA DA EQUIPE</div><h1>Acesse a operação</h1><p id="login-help" class="muted">Escolha um perfil para conhecer o sistema.</p><div id="message" class="notice" role="status" tabindex="-1" hidden></div>
+    <form id="login-form"><div id="demo-fields" class="form-stack"><div class="field"><label for="role">Perfil de acesso</label><select id="role"><option value="central">Central de atendimento</option><option value="motorista">Motorista</option></select></div><div id="driver-field" class="field" hidden><label for="driver">Motorista de demonstração</label><select id="driver"></select></div></div><div id="real-fields" class="form-stack" hidden><div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" maxlength="254"></div><div class="field"><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password"></div><small class="muted">Para liberar ou recuperar seu acesso, fale com a central.</small></div><button id="login-button" class="button" type="submit">Entrar na demonstração</button></form>
+    <div class="notice" data-mode-note>Demonstração local · Use somente dados fictícios.</div><a class="back-link" href="index.html">← Voltar ao início</a>
+  </section>
+</main>
+  <noscript><p>Ative o JavaScript para usar o sistema.</p></noscript>
+</body>
+</html>
