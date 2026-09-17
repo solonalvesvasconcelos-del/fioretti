@@ -1,8 +1,8 @@
-import { config } from './config.js';
-import {createSupabaseServices} from './supabase-service.js';
-import {getClient} from './supabase-client.js';
-import {localPhotos} from './local-photos.js';
-import {parseValor} from './valor.js';
+import { config } from './config.js?v=7';
+import {createSupabaseServices} from './supabase-service.js?v=7';
+import {getClient} from './supabase-client.js?v=7';
+import {localPhotos} from './local-photos.js?v=7';
+import {parseValor} from './valor.js?v=7';
 const KEY = 'reboque.chamados.v1';
 const SESSION = 'reboque.sessao.v1';
 export const statuses = ['Aguardando', 'Em atendimento', 'Concluído', 'Cancelado'];

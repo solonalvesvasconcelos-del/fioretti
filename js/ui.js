@@ -1,6 +1,6 @@
-import {services, statuses} from './services.js';
-import {config} from './config.js';
-import {parseValor} from './valor.js';
+import {services, statuses} from './services.js?v=7';
+import {config} from './config.js?v=7';
+import {parseValor} from './valor.js?v=7';
 const $ = selector => document.querySelector(selector);
 const page = document.body.dataset.page;
 const base = page === 'motorista' ? '../' : './';
