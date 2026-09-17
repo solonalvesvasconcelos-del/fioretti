@@ -1,1 +1,1 @@
-import './ui.js';
+import './ui.js?v=2';
