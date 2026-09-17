@@ -12,7 +12,7 @@ const server=http.createServer(async(req,res)=>{
     const url=new URL(req.url,'http://127.0.0.1');
     let relative=decodeURIComponent(url.pathname);
     if(relative.endsWith('/'))relative+='index.html';
-    if(!/^\/(?:index\.html|login\.html|dashboard\.html|novo-chamado\.html|motorista\/index\.html|(?:css|js|assets)\/[a-zA-Z0-9_./-]+)$/.test(relative)){res.writeHead(404).end('Não encontrado');return;}
+    if(!/^\/(?:index\.html|login\.html|dashboard\.html|novo-chamado\.html|usuarios\.html|motorista\/index\.html|(?:css|js|assets)\/[a-zA-Z0-9_./-]+)$/.test(relative)){res.writeHead(404).end('Não encontrado');return;}
     const file=path.resolve(root,'.'+relative), extension=path.extname(file);
     if(!file.startsWith(root+path.sep)||!types[extension]){res.writeHead(404).end();return;}
     const data=await readFile(file);
