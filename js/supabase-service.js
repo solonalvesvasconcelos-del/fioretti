@@ -63,6 +63,24 @@ export function createSupabaseServices(getClient, validate) {
         return map(check(await (await getClient()).rpc('atribuir_motorista',{p_id:id,p_motorista:driver||null,p_expected:expected})));
       }
     },
+    usuarios:{
+      async list() {
+        return check(await (await getClient()).from('perfis').select('id,nome,role,ativo').order('nome'));
+      },
+      async create({nome,email,senha,role}) {
+        const client=await getClient();
+        const {data,error:err}=await client.functions.invoke('criar-usuario',{body:{nome,email,senha,role}});
+        if (err) {
+          let msg='Não foi possível criar o usuário.';
+          try { msg=(await err.context.json()).error||msg; } catch {}
+          throw new Error(msg);
+        }
+        return data;
+      },
+      async toggleActive(id,ativo) {
+        return check(await (await getClient()).rpc('alternar_usuario_ativo',{p_id:id,p_ativo:ativo}));
+      }
+    },
     storage:{
       async upload(id,file) {
         if (!file || !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5*1024*1024 || file.size===0)

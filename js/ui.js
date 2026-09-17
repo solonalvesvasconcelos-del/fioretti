@@ -15,6 +15,7 @@ const icons = {
   clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>'),
   check: svg('<path d="M5 13l4 4L19 7"/>'),
   cancel: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
+  users: svg('<circle cx="9" cy="7" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="8" r="2.5"/><path d="M23 20c0-2.6-2-4.7-4.5-5.4"/>'),
 };
 const statIcons = [icons.clock, icons.route, icons.check, icons.cancel];
 const toneColors = ['#e6a417','#2f8f6f','#3ea363','#e32230'];
@@ -59,7 +60,7 @@ async function init() {
   const drivers=await services.drivers.list();
   const driverName=id=>drivers.find(d=>d.id===id)?.name || (id ? 'Motorista indisponível' : 'Não atribuído');
   const driverOptions=selected=>drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)}</option>`).join('');
-  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
+  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>${remote?`<a class="${page==='usuarios'?'active':''}" href="${base}usuarios.html">${icons.users} <span>Usuários</span></a>`:''}`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':page==='usuarios'?'Usuários':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
   function leave() { $('#detail')?.close(); $('#main').replaceChildren(); location.replace(base+'login.html'); }
   $('#logout').onclick=async()=>{try { await services.auth.signOut(); leave(); } catch(e) { error(e); }};
   await services.auth.watch(leave);
@@ -82,6 +83,33 @@ async function init() {
         location.href=`dashboard.html?criado=${encodeURIComponent(row.protocolo)}`;
       } catch(e) { error(e); button.disabled=false; button.textContent='Criar chamado'; }
     };
+    return;
+  }
+  if (page==='usuarios') {
+    if (!remote) { message('Disponível apenas com o backend real ativado.',true); return; }
+    async function loadUsers() {
+      const rows=await services.usuarios.list();
+      $('#user-rows').innerHTML=rows.map(u=>`<tr><td><b>${esc(u.nome)}</b>${u.id===user.id?' <small>(você)</small>':''}</td><td>${u.role==='central'?'Central':'Motorista'}</td><td><span class="badge ${u.ativo?'status-2':'status-3'}">${u.ativo?'Ativo':'Inativo'}</span></td><td>${u.id===user.id?'':`<button class="button secondary" data-toggle="${esc(u.id)}" data-ativo="${u.ativo}">${u.ativo?'Desativar':'Ativar'}</button>`}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Nenhum usuário cadastrado.</td></tr>';
+      document.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{
+        b.disabled=true;
+        try { requireConnection(); await services.usuarios.toggleActive(b.dataset.toggle,b.dataset.ativo!=='true'); await loadUsers(); }
+        catch(e) { error(e); b.disabled=false; }
+      });
+    }
+    $('#user-form').onsubmit=async event=>{
+      event.preventDefault(); const form=event.currentTarget;
+      if (!form.reportValidity()) return;
+      const button=$('#u-save'); button.disabled=true; button.textContent='Criando…';
+      try {
+        requireConnection();
+        await services.usuarios.create({nome:$('#u-nome').value,email:$('#u-email').value,senha:$('#u-senha').value,role:$('#u-role').value});
+        form.reset();
+        message('Usuário criado com sucesso.');
+        await loadUsers();
+      } catch(e) { error(e); }
+      finally { button.disabled=false; button.textContent='Criar usuário'; }
+    };
+    await loadUsers();
     return;
   }
   let offset=0, revision=0, timer, detailRevision=0, photoUrls=[];

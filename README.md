@@ -53,6 +53,7 @@ index.html
 login.html
 dashboard.html
 novo-chamado.html
+usuarios.html
 motorista/
 css/
 js/
@@ -69,7 +70,7 @@ Não envie scripts/, tests/ ou supabase/ para o diretório público; são ferram
 
 O mesmo conjunto estático pode ser enviado à raiz de um repositório junto de .nojekyll. Em Settings → Pages, selecione Deploy from a branch → main → /(root). A disponibilidade em repositórios privados depende do plano. [Documentação oficial](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
-O repositório armazena os arquivos da simulação. A integração real com Supabase continua desativada, e os registros criados no navegador não são enviados ao GitHub.
+O repositório armazena os arquivos do sistema. O provedor de dados é controlado por js/config.js (provider: 'local' ou 'supabase'); quando 'supabase', os registros vão para o projeto configurado, não para o navegador nem para o GitHub.
 
 ## Onde ficam os dados
 
@@ -89,17 +90,17 @@ Para reiniciar a demonstração, remova essas duas chaves e o banco fioretti-fot
 - js/ui.js: telas, formulários, filtros, atualização e detalhes.
 - js/services.js: validação, serviços da simulação e seleção do provedor.
 - js/local-photos.js: armazenamento local das fotos.
-- js/config.js: modo de execução, atualmente local.
-- js/supabase-client.js e js/supabase-service.js: adaptador futuro, desativado.
+- js/config.js: define o provedor ativo (local ou supabase) e as credenciais públicas.
+- js/supabase-client.js e js/supabase-service.js: adaptador para o backend real quando provider é 'supabase'.
+- usuarios.html: tela de gerenciamento de usuários (criar central/motorista, ativar/desativar) — só funciona com provider 'supabase' e para quem tem papel 'central'.
 - css/style.css: base responsiva; css/fioretti.css: identidade da Fioretti e ajustes da operação.
 - assets/: arquivos fornecidos pelo usuário, sem modificar o logotipo original.
-- supabase/: proposta de estrutura do backend para uma etapa futura.
+- supabase/migrations/: SQL do banco (rodar em ordem, uma vez cada, no SQL Editor do projeto).
+- supabase/functions/criar-usuario/: Edge Function que cria o usuário de Auth + perfil; é a única peça que usa a chave service_role, e roda no servidor da Supabase, nunca no navegador.
 
-## Supabase: etapa futura, desativada
+## Supabase: backend real
 
-O projeto Supabase ainda não foi criado. O material em supabase/migrations/ e o adaptador foram preparados, mas **a migração e a integração remota não foram executadas nem homologadas em um Supabase real**. Mantenha provider: 'local' para esta entrega. Não ative em produção apenas trocando essa configuração.
-
-Antes de ativar, será preciso criar o projeto, revisar/aplicar a migração em ambiente de teste, provisionar empresa e perfis vinculados aos usuários de Auth e verificar isolamento entre usuários/empresas, acesso às fotos, sessões e concorrência. Veja supabase/ATIVACAO-FUTURA.md.
+Este projeto pode rodar em dois modos, controlados por js/config.js: `provider: 'local'` (demonstração, dados só no navegador) ou `provider: 'supabase'` (backend real, dados compartilhados entre central e motoristas). Ativar o modo Supabase exige criar o projeto, aplicar as migrações de supabase/migrations/ em ordem, provisionar empresa e perfis, publicar a Edge Function de supabase/functions/ e homologar isolamento entre usuários/empresas, acesso às fotos, sessões e concorrência antes de distribuir credenciais reais. Veja o passo a passo em supabase/ATIVACAO-FUTURA.md.
 
 O modo local não carrega bibliotecas externas e não faz chamadas ao Supabase. O adaptador futuro, quando ativado, carrega o SDK oficial de uma CDN com versão fixa; depende de conexão à internet.
 
