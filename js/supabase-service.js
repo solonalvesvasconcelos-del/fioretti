@@ -61,6 +61,15 @@ export function createSupabaseServices(getClient, validate) {
       },
       async assign(id,driver,expected) {
         return map(check(await (await getClient()).rpc('atribuir_motorista',{p_id:id,p_motorista:driver||null,p_expected:expected})));
+      },
+      async updateValor(id,valor,expected) {
+        return map(check(await (await getClient()).rpc('atualizar_valor',{p_id:id,p_valor:valor,p_expected:expected})));
+      }
+    },
+    kpis:{
+      async periodo({inicio=null,fim=null}={}) {
+        const rows=check(await (await getClient()).rpc('kpis_periodo',{p_inicio:inicio,p_fim:fim}));
+        return rows.map(r=>({status:r.status,total:Number(r.total),valorTotal:Number(r.valor_total),ticketMedio:r.ticket_medio==null?null:Number(r.ticket_medio)}));
       }
     },
     usuarios:{

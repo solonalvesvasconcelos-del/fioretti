@@ -2,6 +2,7 @@ import { config } from './config.js';
 import {createSupabaseServices} from './supabase-service.js';
 import {getClient} from './supabase-client.js';
 import {localPhotos} from './local-photos.js';
+import {parseValor} from './valor.js';
 const KEY = 'reboque.chamados.v1';
 const SESSION = 'reboque.sessao.v1';
 export const statuses = ['Aguardando', 'Em atendimento', 'Concluído', 'Cancelado'];
@@ -19,6 +20,7 @@ export function validate(input, {remote=false}={}) {
   if (d.motorista && (remote ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.motorista) : !drivers.includes(d.motorista))) throw new Error('Motorista inválido.');
   const limits={cliente:120,telefone:20,placa:7,veiculo:120,origem:250,destino:250,observacoes:1000};
   for (const [key,max] of Object.entries(limits)) if(d[key].length>max) throw new Error(`O campo ${key} excede o limite de ${max} caracteres.`);
+  d.valor = parseValor(input.valor);
   return d;
 }
 function write(rows) {
@@ -94,6 +96,13 @@ export const localServices = {
       const allowed = {'Aguardando':['Em atendimento','Cancelado'],'Em atendimento':['Concluído','Cancelado']};
       if (!allowed[row.status]?.includes(status)) throw new Error('Esta alteração de status não é permitida.');
       row.status=status; row.updatedAt=new Date().toISOString(); write(rows); return row;
+    },
+    async updateValor(id, valor, expected) {
+      demoCentral();
+      const rows = read(), row = rows.find(r=>r.id===id);
+      if (!row) throw new Error('Chamado não encontrado.');
+      if(expected && row.updatedAt!==expected)throw new Error('Este chamado foi atualizado. Recarregue os detalhes.');
+      row.valor=valor; row.updatedAt=new Date().toISOString(); write(rows); return row;
     }
   },
   storage: {

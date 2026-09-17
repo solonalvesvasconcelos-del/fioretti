@@ -1,6 +1,7 @@
 import test, {beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {localServices as services,validate} from '../js/services.js';
+import {parseValor} from '../js/valor.js';
 const memory=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k),clear:()=>m.clear()};};
 globalThis.localStorage=memory();globalThis.sessionStorage=memory();
 beforeEach(async()=>{localStorage.clear();sessionStorage.clear();await services.auth.signIn('central','');});
@@ -46,4 +47,30 @@ test('busca, filtro e paginação preservam contadores totais',async()=>{
   assert.equal((await services.chamados.summary()).Aguardando,55);
   assert.equal((await services.chamados.list({search:'Cliente 54'})).length,1);
   assert.equal((await services.chamados.list({status:'Concluído'})).length,0);
+});
+
+test('parseValor aceita valores opcionais e rejeita entradas inválidas',()=>{
+  assert.equal(parseValor(''),null);
+  assert.equal(parseValor(undefined),null);
+  assert.equal(parseValor('150'),150);
+  assert.equal(parseValor('150,5'),150.5);
+  assert.equal(parseValor('99.999'),100); // arredonda para 2 casas
+  for(const raw of ['-10','abc','1000000'])assert.throws(()=>parseValor(raw));
+});
+
+test('validate() normaliza o valor cobrado e create() persiste o campo',async()=>{
+  assert.equal(validate(valid).valor,null);
+  assert.equal(validate({...valid,valor:'250'}).valor,250);
+  assert.throws(()=>validate({...valid,valor:'-5'}));
+  const row=await services.chamados.create({...valid,valor:'320.5'});
+  assert.equal(row.valor,320.5);
+});
+
+test('updateValor é exclusivo da central e respeita a concorrência otimista',async()=>{
+  const row=await services.chamados.create(valid);
+  await assert.rejects(services.chamados.updateValor(row.id,300,'2000-01-01'));
+  const updated=await services.chamados.updateValor(row.id,300,row.updatedAt);
+  assert.equal(updated.valor,300);
+  await services.auth.signIn('motorista','Ana Costa');
+  await assert.rejects(services.chamados.updateValor(row.id,400,updated.updatedAt));
 });

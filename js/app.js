@@ -1,1 +1,1 @@
-﻿import './ui.js?v=6';
+﻿import './ui.js?v=7';

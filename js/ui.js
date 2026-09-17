@@ -1,11 +1,13 @@
 import {services, statuses} from './services.js';
 import {config} from './config.js';
+import {parseValor} from './valor.js';
 const $ = selector => document.querySelector(selector);
 const page = document.body.dataset.page;
 const base = page === 'motorista' ? '../' : './';
 const remote = config.provider === 'supabase';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = value => new Date(value).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const currency = value => value==null ? 'Não informado' : Number(value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const badge = status => `<span class="badge status-${statuses.indexOf(status)}">${esc(status)}</span>`;
 const svg = path => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 const icons = {
@@ -18,6 +20,7 @@ const icons = {
   users: svg('<circle cx="9" cy="7" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="8" r="2.5"/><path d="M23 20c0-2.6-2-4.7-4.5-5.4"/>'),
   phone: svg('<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.8.7 2.8.8a2 2 0 0 1 1.7 2z"/>'),
   map: svg('<path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/>'),
+  chart: svg('<path d="M4 20V10M12 20V4M20 20v-7"/>'),
 };
 const statIcons = [icons.clock, icons.route, icons.check, icons.cancel];
 const toneColors = ['#e6a417','#2f8f6f','#3ea363','#e32230'];
@@ -63,7 +66,8 @@ async function init() {
   const drivers=await driversPromise;
   const driverName=id=>drivers.find(d=>d.id===id)?.name || (id ? 'Motorista indisponível' : 'Não atribuído');
   const driverOptions=selected=>drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)}</option>`).join('');
-  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>${remote?`<a class="${page==='usuarios'?'active':''}" href="${base}usuarios.html">${icons.users} <span>Usuários</span></a>`:''}`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':page==='usuarios'?'Usuários':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
+  const pageTitle={novo:'Novo chamado',motorista:'Motorista',usuarios:'Usuários',indicadores:'Indicadores'}[page]||'Visão geral';
+  $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>${remote?`<a class="${page==='indicadores'?'active':''}" href="${base}indicadores.html">${icons.chart} <span>Indicadores</span></a><a class="${page==='usuarios'?'active':''}" href="${base}usuarios.html">${icons.users} <span>Usuários</span></a>`:''}`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${pageTitle}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
   function leave() { $('#detail')?.close(); $('#main').replaceChildren(); location.replace(base+'login.html'); }
   $('#logout').onclick=async()=>{try { await services.auth.signOut(); leave(); } catch(e) { error(e); }};
   await services.auth.watch(leave);
@@ -113,6 +117,36 @@ async function init() {
       finally { button.disabled=false; button.textContent='Criar usuário'; }
     };
     await loadUsers();
+    return;
+  }
+  if (page==='indicadores') {
+    if (!remote) { message('Disponível apenas com o backend real ativado.',true); return; }
+    const toISODate=d=>d.toISOString().slice(0,10);
+    const dayStart=value=>value?new Date(`${value}T00:00:00`).toISOString():null;
+    const dayAfter=value=>{if(!value)return null;const d=new Date(`${value}T00:00:00`);d.setDate(d.getDate()+1);return d.toISOString();};
+    const today=new Date();
+    $('#kpi-inicio').value=toISODate(new Date(today.getFullYear(),today.getMonth(),1));
+    $('#kpi-fim').value=toISODate(today);
+    async function loadKpis() {
+      requireConnection();
+      const rows=await services.kpis.periodo({inicio:dayStart($('#kpi-inicio').value),fim:dayAfter($('#kpi-fim').value)});
+      const byStatus=status=>rows.find(r=>r.status===status)||{total:0,valorTotal:0,ticketMedio:null};
+      const totalAtendimentos=rows.reduce((sum,r)=>sum+r.total,0);
+      const concluidos=byStatus('Concluído');
+      const cards=[
+        ['Atendimentos no período',String(totalAtendimentos).padStart(2,'0'),'Todos os status'],
+        ['Concluídos',String(concluidos.total).padStart(2,'0'),'Atendimentos finalizados'],
+        ['Valor total',currency(concluidos.valorTotal),'Somente atendimentos concluídos'],
+        ['Ticket médio',currency(concluidos.ticketMedio),'Valor médio por atendimento concluído'],
+      ];
+      $('#kpi-stats').innerHTML=cards.map(([label,value,note],i)=>`<article class="stat" data-tone="${i}"><div class="stat-label">${label}</div><strong>${value}</strong><small>${note}</small></article>`).join('');
+      $('#kpi-rows').innerHTML=statuses.map(status=>{const s=byStatus(status);return `<tr><td>${badge(status)}</td><td>${s.total}</td><td>${currency(s.valorTotal)}</td><td>${currency(s.ticketMedio)}</td></tr>`;}).join('');
+    }
+    $('#kpi-form').onsubmit=async event=>{
+      event.preventDefault(); const button=event.submitter; button.disabled=true;
+      try { await loadKpis(); } catch(e) { error(e); } finally { button.disabled=false; }
+    };
+    try { await loadKpis(); } catch(e) { error(e); }
     return;
   }
   let offset=0, revision=0, timer, detailRevision=0, photoUrls=[];
@@ -172,7 +206,7 @@ async function init() {
     const phoneHref=`tel:${String(r.telefone||'').replace(/[^+\d]/g,'')}`;
     const mapHref=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(r.origem)}`;
     const fieldActions=user.role==='motorista'&&active?`<div class="field-actions"><a class="button secondary" href="${esc(phoneHref)}">${icons.phone} Ligar para cliente</a><a class="button secondary" href="${esc(mapHref)}" target="_blank" rel="noopener noreferrer">${icons.map} Abrir rota</a></div>`:'';
-    $('#detail-content').innerHTML=`<div class="eyebrow">ATENDIMENTO FIORETTI</div><h2 id="detail-title">${esc(r.protocolo)}</h2>${badge(r.status)}<div id="detail-message" class="notice" role="status" tabindex="-1" hidden></div><dl>${[['Cliente',r.cliente],['Telefone',r.telefone],['Veículo',`${r.veiculo} • ${r.placa}`],['Serviço',r.servico],['Prioridade',r.prioridade],['Origem',r.origem],['Destino',r.destino],['Motorista',driverName(r.motorista)],['Observações',r.observacoes||'Sem observações']].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${fieldActions}${user.role==='central'&&r.status==='Aguardando'?`<form id="assign-form" class="field"><label for="assign-driver">Atribuir motorista</label><select id="assign-driver"><option value="">Não atribuído</option>${driverOptions(r.motorista)}</select><button class="button secondary">Salvar responsável</button></form>`:''}<div class="actions detail-actions">${r.status==='Aguardando'&&r.motorista?'<button class="button" data-status="Em atendimento">Iniciar atendimento</button>':''}${r.status==='Em atendimento'?'<button class="button" data-status="Concluído">Concluir atendimento</button>':''}${active&&user.role==='central'?'<button class="button secondary" data-status="Cancelado">Cancelar chamado</button>':''}</div>${true?`<section class="photo-section"><h3>Fotos do atendimento</h3><div id="photos" class="photo-grid" aria-live="polite">Carregando fotos…</div>${active?'<form id="photo-form" class="field"><label for="photo-file">Enviar foto · JPG, PNG ou WebP até 5 MB</label><input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" required><button class="button secondary">Enviar foto</button></form>':''}<small>Prévia das 100 fotos mais recentes. Na demonstração, as fotos ficam apenas neste navegador.</small></section>`:''}`;
+    $('#detail-content').innerHTML=`<div class="eyebrow">ATENDIMENTO FIORETTI</div><h2 id="detail-title">${esc(r.protocolo)}</h2>${badge(r.status)}<div id="detail-message" class="notice" role="status" tabindex="-1" hidden></div><dl>${[['Cliente',r.cliente],['Telefone',r.telefone],['Veículo',`${r.veiculo} • ${r.placa}`],['Serviço',r.servico],['Prioridade',r.prioridade],['Origem',r.origem],['Destino',r.destino],['Motorista',driverName(r.motorista)],['Valor',currency(r.valor)],['Observações',r.observacoes||'Sem observações']].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${fieldActions}${user.role==='central'&&r.status==='Aguardando'?`<form id="assign-form" class="field"><label for="assign-driver">Atribuir motorista</label><select id="assign-driver"><option value="">Não atribuído</option>${driverOptions(r.motorista)}</select><button class="button secondary">Salvar responsável</button></form>`:''}${user.role==='central'?`<form id="valor-form" class="field"><label for="valor-input">Valor cobrado do cliente</label><input id="valor-input" type="number" min="0" step="0.01" value="${r.valor??''}" placeholder="Ex.: 150.00"><button class="button secondary">Salvar valor</button></form>`:''}<div class="actions detail-actions">${r.status==='Aguardando'&&r.motorista?'<button class="button" data-status="Em atendimento">Iniciar atendimento</button>':''}${r.status==='Em atendimento'?'<button class="button" data-status="Concluído">Concluir atendimento</button>':''}${active&&user.role==='central'?'<button class="button secondary" data-status="Cancelado">Cancelar chamado</button>':''}</div>${true?`<section class="photo-section"><h3>Fotos do atendimento</h3><div id="photos" class="photo-grid" aria-live="polite">Carregando fotos…</div>${active?'<form id="photo-form" class="field"><label for="photo-file">Enviar foto · JPG, PNG ou WebP até 5 MB</label><input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" required><button class="button secondary">Enviar foto</button></form>':''}<small>Prévia das 100 fotos mais recentes. Na demonstração, as fotos ficam apenas neste navegador.</small></section>`:''}`;
     if(!$('#detail').open)$('#detail').showModal();
     async function perform(button,operation) {
       button.disabled=true;
@@ -181,6 +215,7 @@ async function init() {
     }
     document.querySelectorAll('[data-status]').forEach(button=>button.onclick=()=>perform(button,()=>services.chamados.updateStatus(id,button.dataset.status,r.status)));
     if($('#assign-form')) $('#assign-form').onsubmit=e=>{e.preventDefault();perform(e.submitter,()=>services.chamados.assign(id,$('#assign-driver').value,r.updatedAt));};
+    if($('#valor-form')) $('#valor-form').onsubmit=e=>{e.preventDefault();perform(e.submitter,()=>services.chamados.updateValor(id,parseValor($('#valor-input').value),r.updatedAt));};
     {
       if($('#photo-form'))$('#photo-form').onsubmit=e=>{e.preventDefault();perform(e.submitter,()=>services.storage.upload(id,$('#photo-file').files[0]));};
       try {
