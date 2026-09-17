@@ -1,6 +1,6 @@
 import test, {beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
-import {services,validate} from '../js/services.js';
+import {localServices as services,validate} from '../js/services.js';
 const memory=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k),clear:()=>m.clear()};};
 globalThis.localStorage=memory();globalThis.sessionStorage=memory();
 beforeEach(async()=>{localStorage.clear();sessionStorage.clear();await services.auth.signIn('central','');});
