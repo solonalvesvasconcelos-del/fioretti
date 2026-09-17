@@ -54,10 +54,11 @@ async function init() {
     };
     return;
   }
+  const driversPromise=services.drivers.list();
   const user=await services.auth.current();
   if (!user) { location.replace(base+'login.html'); return; }
   if (user.role==='motorista' && page!=='motorista') { redirect(user); return; }
-  const drivers=await services.drivers.list();
+  const drivers=await driversPromise;
   const driverName=id=>drivers.find(d=>d.id===id)?.name || (id ? 'Motorista indisponível' : 'Não atribuído');
   const driverOptions=selected=>drivers.map(d=>`<option value="${esc(d.id)}" ${d.id===selected?'selected':''}>${esc(d.name)}</option>`).join('');
   $('#shell').innerHTML=`<aside class="sidebar"><a class="brand" href="${base}index.html" aria-label="Fioretti — início">${logo}</a><div class="nav-label">CENTRAL DE OPERAÇÕES</div><nav aria-label="Menu principal">${user.role==='central'?`<a class="${page==='dashboard'?'active':''}" href="${base}dashboard.html">${icons.grid} <span>Visão geral</span></a><a class="${page==='novo'?'active':''}" href="${base}novo-chamado.html">${icons.plus} <span>Novo chamado</span></a>${remote?`<a class="${page==='usuarios'?'active':''}" href="${base}usuarios.html">${icons.users} <span>Usuários</span></a>`:''}`:''}<a class="${page==='motorista'?'active':''}" href="${base}motorista/index.html">${icons.route} <span>Área do motorista</span></a></nav><div class="sidebar-bottom">${remote?'Operação conectada':'Ambiente de demonstração'}<small>${remote?'Auto Socorro Fioretti':'Dados apenas neste navegador'}</small></div></aside><header class="topbar"><span>Operação <span class="muted">/ ${page==='novo'?'Novo chamado':page==='motorista'?'Motorista':page==='usuarios'?'Usuários':'Visão geral'}</span></span><div class="account"><span class="avatar">${esc(user.name.charAt(0))}</span><span>${esc(user.name)}</span><button class="link-button" id="logout">Sair</button></div></header>`;
