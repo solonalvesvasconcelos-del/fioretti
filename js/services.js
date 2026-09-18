@@ -1,20 +1,31 @@
-import { config } from './config.js?v=7';
-import {createSupabaseServices} from './supabase-service.js?v=7';
-import {getClient} from './supabase-client.js?v=7';
-import {localPhotos} from './local-photos.js?v=7';
-import {parseValor} from './valor.js?v=7';
+import { config } from './config.js?v=14';
+import {createSupabaseServices} from './supabase-service.js?v=14';
+import {getClient} from './supabase-client.js?v=14';
+import {localPhotos} from './local-photos.js?v=14';
+import {parseValor} from './valor.js?v=14';
 const KEY = 'reboque.chamados.v1';
 const SESSION = 'reboque.sessao.v1';
 export const statuses = ['Aguardando', 'Em atendimento', 'Concluído', 'Cancelado'];
 export const drivers = ['Ana Costa', 'Carlos Silva', 'Marcos Lima'];
+export function normalizeAddress(value) {
+  return String(value??'').trim().replace(/\s+/g,' ').replace(/\s*,\s*/g,', ');
+}
+function validateAddress(value,label) {
+  const parts=value.split(',').map(part=>part.trim()).filter(Boolean);
+  const hasReference=/(?:\d|\bs\/?n\b|sem\s+n[uú]mero)/i.test(value);
+  if(value.length<10||parts.length<2||!hasReference)
+    throw new Error(`Informe o endereço de ${label} completo: rua ou rodovia, número ou km, bairro e cidade, separados por vírgulas.`);
+}
 export function validate(input, {remote=false}={}) {
   const fields=['cliente','telefone','placa','veiculo','origem','destino','servico','prioridade','motorista','observacoes'];
   const d = Object.fromEntries(fields.map(k => [k, String(input[k]??'').trim()]));
+  d.origem=normalizeAddress(d.origem); d.destino=normalizeAddress(d.destino);
   d.placa = (d.placa || '').toUpperCase().replace(/[-\s]/g, '');
   if (!d.cliente || d.cliente.length < 3) throw new Error('Informe o nome do cliente com pelo menos 3 caracteres.');
   if (!/^\d{10,11}$/.test((d.telefone || '').replace(/\D/g, ''))) throw new Error('Informe um telefone com DDD e 10 ou 11 dígitos.');
   if (!/^[A-Z]{3}\d[A-Z0-9]\d{2}$/.test(d.placa)) throw new Error('Informe uma placa válida, como ABC1D23 ou ABC1234.');
-  for (const k of ['veiculo','origem','destino']) if (!d[k] || d[k].length < 3) throw new Error('Preencha veículo, origem e destino com pelo menos 3 caracteres.');
+  if (!d.veiculo || d.veiculo.length < 3) throw new Error('Informe o veículo com pelo menos 3 caracteres.');
+  validateAddress(d.origem,'origem'); validateAddress(d.destino,'destino');
   if (!['Reboque','Pane mecânica','Pane elétrica','Pneu furado'].includes(d.servico)) throw new Error('Selecione o serviço.');
   if (!['Normal','Urgente'].includes(d.prioridade)) throw new Error('Selecione a prioridade.');
   if (d.motorista && (remote ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.motorista) : !drivers.includes(d.motorista))) throw new Error('Motorista inválido.');

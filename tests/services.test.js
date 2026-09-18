@@ -1,12 +1,17 @@
 import test, {beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
-import {localServices as services,validate} from '../js/services.js';
+import {localServices as services,normalizeAddress,validate} from '../js/services.js';
 import {parseValor} from '../js/valor.js';
 const memory=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k),clear:()=>m.clear()};};
 globalThis.localStorage=memory();globalThis.sessionStorage=memory();
 beforeEach(async()=>{localStorage.clear();sessionStorage.clear();await services.auth.signIn('central','');});
-const valid={cliente:'Cliente Teste',telefone:'(11) 99999-0000',placa:'abc-1234',veiculo:'Fiat Uno',origem:'Rua A, 100',destino:'Oficina B',servico:'Reboque',prioridade:'Normal',motorista:'Ana Costa',observacoes:'Teste'};
+const valid={cliente:'Cliente Teste',telefone:'(11) 99999-0000',placa:'abc-1234',veiculo:'Fiat Uno',origem:'Rua A, 100',destino:'Oficina B, 50',servico:'Reboque',prioridade:'Normal',motorista:'Ana Costa',observacoes:'Teste'};
 test('valida cadastro e normaliza placa',()=>{assert.equal(validate(valid).placa,'ABC1234');for(const field of ['cliente','telefone','placa','origem','destino','veiculo','servico','prioridade'])assert.throws(()=>validate({...valid,[field]:''}));assert.throws(()=>validate({...valid,cliente:'   '}));assert.throws(()=>validate({...valid,motorista:'Inexistente'}));});
+test('exige endereço completo e padroniza separadores',()=>{
+  assert.equal(normalizeAddress(' Rua A ,  100, Centro '),'Rua A, 100, Centro');
+  assert.throws(()=>validate({...valid,origem:'Centro'}),/endereço de origem completo/);
+  assert.throws(()=>validate({...valid,destino:'Oficina B, Centro'}),/endereço de destino completo/);
+});
 test('semeia uma vez, persiste cadastro e restringe transições',async()=>{localStorage.clear();assert.equal((await services.chamados.list()).length,6);assert.equal((await services.chamados.list()).length,6);const row=await services.chamados.create(valid);assert.equal((await services.chamados.list()).length,7);assert.equal(row.protocolo,'RB-1007');assert.equal(JSON.parse(localStorage.getItem('reboque.chamados.v1'))[0].placa,'ABC1234');await assert.rejects(services.chamados.updateStatus(row.id,'Concluído'));await services.chamados.updateStatus(row.id,'Em atendimento');await services.chamados.updateStatus(row.id,'Concluído');await assert.rejects(services.chamados.updateStatus(row.id,'Cancelado'));await assert.rejects(services.chamados.updateStatus('missing','Cancelado'));});
 test('preserva lista vazia e dados corrompidos',async()=>{localStorage.setItem('reboque.chamados.v1','[]');assert.deepEqual(await services.chamados.list(),[]);localStorage.setItem('reboque.chamados.v1','broken');await assert.rejects(services.chamados.list(),/inválidos/);assert.equal(localStorage.getItem('reboque.chamados.v1'),'broken');});
 test('falha de armazenamento é comunicada',async()=>{const original=globalThis.localStorage;globalThis.localStorage={getItem:()=>null,setItem:()=>{throw Error('quota');}};await assert.rejects(services.chamados.list(),/salvar/);globalThis.localStorage=original;});

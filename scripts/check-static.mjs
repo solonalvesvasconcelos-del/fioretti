@@ -3,7 +3,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const pages=['index.html','login.html','dashboard.html','novo-chamado.html','usuarios.html','motorista/index.html'];
+const pages=['index.html','login.html','dashboard.html','novo-chamado.html','indicadores.html','usuarios.html','integracoes.html','os.html','motorista/index.html'];
 let count=0;
 for(const page of pages){
   const source=fs.readFileSync(path.join(root,page),'utf8');

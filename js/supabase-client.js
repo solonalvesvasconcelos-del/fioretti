@@ -1,4 +1,4 @@
-import {config} from './config.js?v=7';
+import {config} from './config.js?v=14';
 let clientPromise;
 export function validateConfig(settings) {
   let url;
